@@ -129,15 +129,12 @@ jobs:
 
     steps:
       - uses: actions/download-artifact@v4
-        with:
-          working-directory: tree_py
       - name: Publish to PyPI
         uses: PyO3/maturin-action@v1
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN_ALL }}
           MATURIN_PASSWORD: ${{ secrets.PYPI_API_TOKEN_ALL }}
         with:
-          working-directory: tree_py
           command: upload
           args: --username __token__ --non-interactive --skip-existing wheels-*/*
 
