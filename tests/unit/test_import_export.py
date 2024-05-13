@@ -1,4 +1,4 @@
-from pyrontree import Tree
+from tree import Tree
 
 def test_tree_import():
 
