@@ -1,0 +1,26 @@
+[workspace]
+members = [
+    "tree_rs",
+    "tree_py",
+]
+
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+homepage = ""
+repository = ""
+keywords = []
+categories = []
+authors = ["macdonald.glen.a@gmail.com"]
+description = "tree module package"
+readme = "README.md"
+license="Apache-2.0"
+rust-version = "1.70"
+
+[profile.release]
+opt-level = 3
+
+[profile.bench]
+opt-level = 3

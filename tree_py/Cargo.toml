@@ -1,0 +1,41 @@
+[package]
+name = "s_tree"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description.workspace = true
+homepage.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+tree_rs = { path = "../tree_rs" }
+pyo3 = { version = "0.21.1" }
+
+[dependencies.uuid]
+version = "1.7.0"
+features = [
+    "v4",                # Lets you generate random UUIDs
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]
+
+[dev-dependencies]
+serial_test = "2.0"
+
+[build-dependencies]
+cbindgen = "0.24"
+
+[package.metadata.maturin]
+python-source = "python"
+
+[features]
+extension-module = ["pyo3/extension-module"]
+default = ["extension-module"]
