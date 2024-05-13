@@ -136,7 +136,7 @@ jobs:
           MATURIN_PASSWORD: ${{ secrets.PYPI_API_TOKEN_ALL }}
         with:
           command: upload
-          args: -u __token__ --non-interactive --skip-existing wheels-*/*
+          args: --username __token__ --non-interactive --skip-existing wheels-*/*
 
   # publish-to-testpypi:
   #   name: Publish Python 🐍 distribution 📦 to TestPyPI
