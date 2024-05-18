@@ -61,7 +61,6 @@ jobs:
         env:
           MATURIN_PASSWORD: ${{ secrets.PYPI_API_TOKEN_ALL }}
         run: |
-          ls -la
-          ls -la tree_py
+          ls
           pip install maturin
           maturin publish --username __token__ --password $MATURIN_PASSWORD
