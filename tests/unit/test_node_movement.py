@@ -1,4 +1,4 @@
-from pyrontree import Tree, Node
+from tree import Tree, Node
 
 def test_node_attach():
 
