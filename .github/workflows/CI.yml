@@ -69,7 +69,7 @@ jobs:
         run: ls -la
       - name: Publish to PyPi
         env:
-          MATURIN_PASSWORD: ${{ secrets.PYPI_API_TOKEN_ALL }}
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN_ALL }}
         run: |
-          pip install maturin
-          maturin publish --username __token__ --password $MATURIN_PASSWORD
+          twine upload --skip-existing *
