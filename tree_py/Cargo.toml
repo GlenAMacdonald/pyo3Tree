@@ -1,5 +1,5 @@
 [package]
-name = "s_tree"
+name = "tree"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
