@@ -12,6 +12,11 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
+project_urls={
+    "Source": "https://github.com/GlenAMacdonald/pyo3Tree",
+    "Tracker": "https://github.com/GlenAMacdonald/pyo3Tree/issues",
+}
+url="https://github.com/GlenAMacdonald/pyo3Tree",
 
 [tool.black]
 skip-string-normalization = true
