@@ -58,9 +58,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
       - name: List directory contents
-        run: | 
-          ls
-          ls -la
+        run: ls -la
       - name: Publish to PyPi
         env:
           MATURIN_PASSWORD: ${{ secrets.PYPI_API_TOKEN_ALL }}
