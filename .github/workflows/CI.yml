@@ -72,6 +72,7 @@ jobs:
       - name: Download wheels
         uses: actions/download-artifact@v4
         with: 
+          name: wheels-macos-aarch64
           path: dist
       - name: List directory contents
         run: ls -la
