@@ -177,7 +177,7 @@ impl NodeWrapper {
 }
 
 #[pymodule]
-fn tree(_: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn pyo3Tree(_: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NodeWrapper>()?;
     m.add_class::<TreeWrapper>()?;
     Ok(())
