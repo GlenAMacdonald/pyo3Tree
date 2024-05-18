@@ -495,17 +495,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ad4cc8da4ef723ed60bced201181d83791ad433213d8c24efffda1eec85d741"
 
 [[package]]
-name = "s_tree"
-version = "0.1.0"
-dependencies = [
- "cbindgen",
- "pyo3",
- "serial_test",
- "tree_rs",
- "uuid",
-]
-
-[[package]]
 name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -651,6 +640,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f4f7f0dd8d50a853a531c426359045b1998f04219d88799810762cd4ad314234"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "tree"
+version = "0.1.0"
+dependencies = [
+ "cbindgen",
+ "pyo3",
+ "serial_test",
+ "tree_rs",
+ "uuid",
 ]
 
 [[package]]
