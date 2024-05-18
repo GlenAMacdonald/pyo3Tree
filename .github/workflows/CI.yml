@@ -87,4 +87,4 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN_ALL }}
         run: |
           twine check dist/*
-          twine upload --skip-existing *
+          twine upload --skip-existing dist/*
