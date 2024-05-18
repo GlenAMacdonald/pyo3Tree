@@ -1,4 +1,4 @@
-Requires Rust installed to build.
+Work in Progess, please ignore this project for now.
 
 To build the python module:
 
