@@ -67,6 +67,12 @@ jobs:
       - uses: actions/download-artifact@v4
       - name: List directory contents
         run: ls -la
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'  # Use a Python version compatible with twine
+      - name: Install twine
+        run: pip install twine
       - name: Publish to PyPi
         env:
           TWINE_USERNAME: __token__
