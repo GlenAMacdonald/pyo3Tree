@@ -24,22 +24,30 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
-        python-version: [3.9]
+        python-version: [3.9, '3.10', '3.11', '3.12']
         platform:
           - runner: macos-latest
             target: aarch64
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Install Maturin
+        run: pip install maturin
+
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
-          working-directory: tree_py
+          working-directory: tree_py  # Adjust this if your Cargo.toml is in a different directory
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
+
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
