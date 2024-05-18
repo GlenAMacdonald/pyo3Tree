@@ -15,7 +15,9 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-url="https://github.com/GlenAMacdonald/pyo3Tree"
+
+[project.urls]
+URL = "https://github.com/GlenAMacdonald/pyo3Tree"
 
 [tool.black]
 skip-string-normalization = true
