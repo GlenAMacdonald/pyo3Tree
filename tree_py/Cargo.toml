@@ -1,14 +1,5 @@
 [package]
 name = "tree"
-version = "0.1.0"
-authors = ["GlenAMacdonald"]
-description = "A Tree Implemented in Rust that holds a python object"
-license = "MIT"
-repository = "https://github.com/GlenAMacdonald/pyo3Tree"
-homepage = "https://github.com/GlenAMacdonald/pyo3Tree"
-readme = "README.md"
-keywords = ["rust","python","bindings","tree"]
-categories = ["development-tools::rust", "development-tools::python"]
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -47,6 +38,7 @@ python-source = "python"
 name = "pyo3Tree"
 version = "0.1.0"
 authors = ["GlenAMacdonald"]
+readme = "README.md"
 description = "A Tree Implemented in Rust that holds a python object"
 repository = "https://github.com/GlenAMacdonald/pyo3Tree"
 homepage = "https://github.com/GlenAMacdonald/pyo3Tree"
