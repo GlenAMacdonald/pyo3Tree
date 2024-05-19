@@ -44,6 +44,13 @@ repository = "https://github.com/GlenAMacdonald/pyo3Tree"
 homepage = "https://github.com/GlenAMacdonald/pyo3Tree"
 keywords = ["rust", "python", "bindings", "tree"]
 
+[target.'cfg(target_arch = "x86_64")'.dependencies.pyo3]
+version = "0.21"
+features = ["extension-module"]
+
+[target.'cfg(target_arch = "i686")'.dependencies.pyo3]
+version = "0.21"
+features = ["extension-module"]
 
 [features]
 extension-module = ["pyo3/extension-module"]
