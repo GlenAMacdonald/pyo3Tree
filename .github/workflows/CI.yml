@@ -22,7 +22,7 @@ jobs:
           - runner: windows-latest
             target: x86
           - runner: windows-latest
-            target: x86
+            target: x64
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
