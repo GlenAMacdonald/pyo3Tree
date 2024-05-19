@@ -84,41 +84,41 @@ jobs:
   #         name: wheels-windows-${{ matrix.platform.target }}
   #         path: tree_py\dist\*.whl
 
-  # macos:
-  #   runs-on: ${{ matrix.platform.runner }}
-  #   strategy:
-  #     matrix:
-  #       python-version: [3.9]
-  #       platform:
-  #         - runner: macos-latest
-  #           target: aarch64
-  #         - runner: macos-latest
-  #           target: x86_64
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+  macos:
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      matrix:
+        python-version: [3.9]
+        platform:
+          - runner: macos-latest
+            target: aarch64
+          - runner: macos-latest
+            target: x86_64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-  #     - name: Build wheels
-  #       uses: PyO3/maturin-action@v1
-  #       with:
-  #         working-directory: tree_py  # Adjust this if your Cargo.toml is in a different directory
-  #         target: ${{ matrix.platform.target }}
-  #         args: --release --out dist --find-interpreter
-  #         sccache: 'true'
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: tree_py  # Adjust this if your Cargo.toml is in a different directory
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
 
-  #     - name: List dist directory contents
-  #       run: ls -la tree_py/dist
+      - name: List dist directory contents
+        run: ls -la tree_py/dist
 
-  #     - name: Upload wheels
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: wheels-macos-${{ matrix.platform.target }}
-  #         path: tree_py/dist/*.whl
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos-${{ matrix.platform.target }}
+          path: tree_py/dist/*.whl
 
   release:
     permissions:
