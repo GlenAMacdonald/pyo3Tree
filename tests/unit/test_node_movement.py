@@ -1,4 +1,4 @@
-from tree import Tree, Node
+from pyo3Tree import Tree, Node
 
 def test_node_attach():
 

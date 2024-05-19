@@ -1,4 +1,5 @@
-from tree import Tree
+from pyo3Tree import Tree
+from pyo3Tree import Node
 
 def test_tree_import():
 
