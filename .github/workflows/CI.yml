@@ -167,6 +167,8 @@ jobs:
       #     path: dist
       - name: List directory contents
         run: ls -la
+      - name: List directory contents
+        run: ls dist
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
