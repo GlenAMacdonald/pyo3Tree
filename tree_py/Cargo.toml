@@ -17,7 +17,7 @@ crate-type = ["cdylib", "lib"]
 
 [dependencies]
 tree_rs = { path = "../tree_rs" }
-pyo3 = { version = "0.21.1" }
+pyo3 = { version = "0.21.1", features = ["extension-module", "auto-initialize"] }
 
 [dependencies.uuid]
 version = "1.7.0"
@@ -43,14 +43,6 @@ description = "A Tree Implemented in Rust that holds a python object"
 repository = "https://github.com/GlenAMacdonald/pyo3Tree"
 homepage = "https://github.com/GlenAMacdonald/pyo3Tree"
 keywords = ["rust", "python", "bindings", "tree"]
-
-[target.'cfg(target_arch = "x86_64")'.dependencies.pyo3]
-version = "0.21"
-features = ["extension-module"]
-
-[target.'cfg(target_arch = "i686")'.dependencies.pyo3]
-version = "0.21"
-features = ["extension-module"]
 
 [features]
 extension-module = ["pyo3/extension-module"]
