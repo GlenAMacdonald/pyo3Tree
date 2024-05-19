@@ -127,6 +127,15 @@ jobs:
       contents: write
     name: Release
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        artifact:
+          # - wheels-macos-aarch64
+          # - wheels-macos-x86_64
+          # # - wheels-windows-x86
+          # - wheels-windows-x64
+          - wheels-linux-x86_64
+          - wheels-linux-i686
     needs:
       # - macos
       # - windows
@@ -135,42 +144,20 @@ jobs:
     steps:
       - name: Create dist directory
         run: mkdir -p dist
-      # - name: Download wheels - macOS aarch64
-      #   uses: actions/download-artifact@v4
-      #   with: 
-      #     name: wheels-macos-aarch64
-      #     path: dist
-      # - name: Download wheels - macOS x86_64
-      #   uses: actions/download-artifact@v4
-      #   with: 
-      #     name: wheels-macos-x86_64
-      #     path: dist
-      # - name: Download wheels - Windows - x86
-      #   uses: actions/download-artifact@v4
-      #   with: 
-      #     name: wheels-windows-x86
-      #     path: dist
-      # - name: Download wheels - Windows - x64
-      #   uses: actions/download-artifact@v4
-      #   with: 
-      #     name: wheels-windows-x64
-      #     path: dist
-      - name: Download wheels - Linux - x86_64
+      
+      - name: Download wheels - ${{ matrix.artifact }}
         uses: actions/download-artifact@v4
         with: 
-          name: wheels-linux-x86_64
+          name: ${{ matrix.artifact }}
           path: dist
-      - name: Download wheels - Linux - i686
-        uses: actions/download-artifact@v4
-        with: 
-          name: wheels-linux-i686
-          path: dist
+      
       - name: List /dist directory contents
         run: ls dist
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'  # Use a Python version compatible with twine
+  
       - name: Install twine
         run: pip install twine
       - name: Publish to PyPi
