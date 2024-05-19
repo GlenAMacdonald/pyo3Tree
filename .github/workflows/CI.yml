@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [x86_64, i686]
+        target: [x86_64]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: 3.9
           architecture: x64
       - name: Build wheels
         uses: PyO3/maturin-action@v1
@@ -157,11 +157,11 @@ jobs:
         with: 
           name: wheels-linux-x86_64
           path: dist
-      - name: Download wheels - Linux - i686
-        uses: actions/download-artifact@v4
-        with: 
-          name: wheels-linux-i686
-          path: dist
+      # - name: Download wheels - Linux - i686
+      #   uses: actions/download-artifact@v4
+      #   with: 
+      #     name: wheels-linux-i686
+      #     path: dist
       - name: List directory contents
         run: ls -la
       - name: Set up Python
