@@ -13,6 +13,52 @@ permissions:
   contents: read
 
 jobs:
+  linux:
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      matrix:
+        python-version: [3.9]
+        platform:
+          - runner: ubuntu-latest
+            target: x86_64
+          # - runner: ubuntu-latest
+          #   target: x86
+          # - runner: ubuntu-latest
+          #   target: aarch64
+          # - runner: ubuntu-latest
+          #   target: armv7
+          # - runner: ubuntu-latest
+          #   target: s390x
+          # - runner: ubuntu-latest
+          #   target: ppc64le
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.platform.target }}
+          
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: tree_py
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
+          manylinux: auto
+
+      - name: List dist directory contents
+        run: dir tree_py\dist
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-${{ matrix.platform.target }}
+          path: tree_py\dist\*.whl
+  
   windows:
     runs-on: ${{ matrix.platform.runner }}
     strategy:
