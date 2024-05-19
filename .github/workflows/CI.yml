@@ -19,7 +19,6 @@ jobs:
       matrix:
         python-version: [3.9]
         target: [x86_64, aarch64, armv7, s390x, ppc64le, ppc64, i686]
-        # target: [x86_64, i686]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -71,7 +70,7 @@ jobs:
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
-          working-directory: tree_py  # Adjust this if your Cargo.toml is in a different directory
+          working-directory: tree_py
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
@@ -147,17 +146,40 @@ jobs:
       - linux
     # if: "startsWith(github.ref, 'refs/tags/')"
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install GitHub CLI
+        run: sudo apt-get install -y gh
+
       - name: Create dist directory
         run: mkdir -p dist
-      
-      - name: Download wheels - ${{ matrix.artifact }}
-        uses: actions/download-artifact@v4
-        with: 
-          name: ${{ matrix.artifact }}
-          path: dist
+
+      - name: Download and unzip artifacts
+        run: |
+          artifacts=(
+            "wheels-macos-aarch64"
+            "wheels-macos-x86_64"
+            "wheels-windows-x86"
+            "wheels-windows-x64"
+            "wheels-linux-x86_64"
+            "wheels-linux-i686"
+            "wheels-linux-aarch64"
+            "wheels-linux-armv7"
+            "wheels-linux-s390x"
+            "wheels-linux-ppc64le"
+            "wheels-linux-ppc64"
+          )
+          for artifact in "${artifacts[@]}"; do
+            echo "Downloading $artifact"
+            gh run download ${{ github.run_id }} --name "$artifact" --dir dist
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: List /dist directory contents
         run: ls dist
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
