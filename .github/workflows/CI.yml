@@ -169,6 +169,10 @@ jobs:
         run: ls -la
       - name: List directory contents
         run: ls dist
+      - name: Extract all wheels
+        run: |
+          cd dist
+          find . -name "*.zip" -exec unzip -o {} \;
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
