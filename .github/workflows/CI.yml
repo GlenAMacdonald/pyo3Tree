@@ -33,7 +33,10 @@ jobs:
           manylinux: auto
 
       - name: List directory contents
-        run: dir
+        run: |
+          ls
+          ls tree_py
+          ls tree_py\dist
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
