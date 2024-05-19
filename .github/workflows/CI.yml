@@ -18,8 +18,8 @@ jobs:
     strategy:
       matrix:
         python-version: [3.9]
-        # target: [x86_64, aarch64, armv7, s390x, ppc64le, ppc64, i686]
-        target: [x86_64, i686]
+        target: [x86_64, aarch64, armv7, s390x, ppc64le, ppc64, i686]
+        # target: [x86_64, i686]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -48,78 +48,78 @@ jobs:
           name: wheels-linux-${{ matrix.target }}
           path: tree_py/dist/*.whl
   
-  # windows:
-  #   runs-on: ${{ matrix.platform.runner }}
-  #   strategy:
-  #     matrix:
-  #       python-version: [3.9]
-  #       platform:
-  #         - runner: windows-latest
-  #           target: x86
-  #         - runner: windows-latest
-  #           target: x64
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+  windows:
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      matrix:
+        python-version: [3.9]
+        platform:
+          - runner: windows-latest
+            target: x86
+          - runner: windows-latest
+            target: x64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-  #         architecture: ${{ matrix.platform.target }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.platform.target }}
 
-  #     - name: Build wheels
-  #       uses: PyO3/maturin-action@v1
-  #       with:
-  #         working-directory: tree_py  # Adjust this if your Cargo.toml is in a different directory
-  #         target: ${{ matrix.platform.target }}
-  #         args: --release --out dist --find-interpreter
-  #         sccache: 'true'
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: tree_py  # Adjust this if your Cargo.toml is in a different directory
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
 
-  #     - name: List dist directory contents
-  #       run: dir tree_py\dist
+      - name: List dist directory contents
+        run: dir tree_py\dist
 
-  #     - name: Upload wheels
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: wheels-windows-${{ matrix.platform.target }}
-  #         path: tree_py\dist\*.whl
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows-${{ matrix.platform.target }}
+          path: tree_py\dist\*.whl
 
-  # macos:
-  #   runs-on: ${{ matrix.platform.runner }}
-  #   strategy:
-  #     matrix:
-  #       python-version: [3.9]
-  #       platform:
-  #         - runner: macos-latest
-  #           target: aarch64
-  #         - runner: macos-latest
-  #           target: x86_64
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+  macos:
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      matrix:
+        python-version: [3.9]
+        platform:
+          - runner: macos-latest
+            target: aarch64
+          - runner: macos-latest
+            target: x86_64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-  #     - name: Build wheels
-  #       uses: PyO3/maturin-action@v1
-  #       with:
-  #         working-directory: tree_py  # Adjust this if your Cargo.toml is in a different directory
-  #         target: ${{ matrix.platform.target }}
-  #         args: --release --out dist --find-interpreter
-  #         sccache: 'true'
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: tree_py  # Adjust this if your Cargo.toml is in a different directory
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
 
-  #     - name: List dist directory contents
-  #       run: ls -la tree_py/dist
+      - name: List dist directory contents
+        run: ls -la tree_py/dist
 
-  #     - name: Upload wheels
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: wheels-macos-${{ matrix.platform.target }}
-  #         path: tree_py/dist/*.whl
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos-${{ matrix.platform.target }}
+          path: tree_py/dist/*.whl
 
   release:
     permissions:
@@ -130,15 +130,20 @@ jobs:
     strategy:
       matrix:
         artifact:
-          # - wheels-macos-aarch64
-          # - wheels-macos-x86_64
-          # # - wheels-windows-x86
-          # - wheels-windows-x64
+          - wheels-macos-aarch64
+          - wheels-macos-x86_64
+          - wheels-windows-x86
+          - wheels-windows-x64
           - wheels-linux-x86_64
           - wheels-linux-i686
+          - wheels-linux-aarch64
+          - wheels-linux-armv7
+          - wheels-linux-s390x
+          - wheels-linux-ppc64le
+          - wheels-linux-ppc64
     needs:
-      # - macos
-      # - windows
+      - macos
+      - windows
       - linux
     # if: "startsWith(github.ref, 'refs/tags/')"
     steps:
