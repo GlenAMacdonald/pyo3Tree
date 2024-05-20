@@ -3,6 +3,13 @@ use pyo3::{prelude::*, PyObject, Python, ToPyObject};
 use pyo3::types::{PyDict, PyList};
 use tree_rs::{Node as Node_rs, Tree as Tree_rs};
 
+use dashmap::DashMap;
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref DATA_MAP: DashMap<String, PyObject> = DashMap::new();
+}
+
 #[pyclass]
 #[pyo3(name = "Tree")]
 #[derive(Clone)]
@@ -81,11 +88,11 @@ fn load_py_tree(py:Python<'_>, obj: &Bound<PyDict>) -> PyResult<Arc<Mutex<Node_r
         Err(err) => Err(err),
     }?;
 
-    let data = match obj.get_item("data") {
-        Ok(Some(value)) => Ok(value.to_object(py)),
-        Ok(None) => Ok(py.None()),
-        Err(err) => Err(err),
-    }?;
+    match obj.get_item("data") {
+        Ok(Some(value)) => (DATA_MAP.insert(id.clone(),value.to_object(py))),
+        Ok(None) => (DATA_MAP.insert(id.clone(),py.None())),
+        Err(err) => None,
+    };
 
     // parent is not expected or needed in the incoming PyObject, it is inferred from the structure
 
@@ -102,7 +109,7 @@ fn load_py_tree(py:Python<'_>, obj: &Bound<PyDict>) -> PyResult<Arc<Mutex<Node_r
         }
     }
 
-    Ok(Arc::new(Mutex::new(Node_rs{id, data, children: node_children, parent: None})))
+    Ok(Arc::new(Mutex::new(Node_rs{id, children: node_children, parent: None})))
 }
 
 fn set_py_dict_recursively(py: Python, node: Arc<Mutex<Node_rs>>) -> PyObject {
@@ -111,8 +118,8 @@ fn set_py_dict_recursively(py: Python, node: Arc<Mutex<Node_rs>>) -> PyObject {
 
     py_dict.set_item("id", node_lock.id.clone()).unwrap();
 
-    if !node_lock.data.is_none(py) {
-        py_dict.set_item("data", node_lock.data.clone()).unwrap();
+    if let Some(data) = DATA_MAP.get(&node_lock.id) {
+        py_dict.set_item("data", data.clone()).unwrap();
     }
 
     let children_lock = node_lock.children.lock().unwrap();
@@ -135,7 +142,9 @@ struct NodeWrapper(Arc<Mutex<Node_rs>>);
 impl NodeWrapper {
     #[new]
     fn new (data: PyObject) -> Self {
-        NodeWrapper(Node_rs::new(data.clone(), None))
+        let node = Node_rs::new(None);
+        DATA_MAP.insert(node.lock().unwrap().id.clone(), data);
+        NodeWrapper(node)
     }
 
     #[getter]
@@ -146,13 +155,14 @@ impl NodeWrapper {
     #[getter]
     fn get_data(&self, py: Python) -> PyResult<PyObject> {
         let node = self.0.lock().unwrap();
-        Ok(node.data.clone_ref(py))
+        Ok(DATA_MAP.get(&node.id).unwrap().clone())
+        // node.data.as_ref().expect("No value present").clone_ref(py))
     }
 
     #[setter]
     fn set_data(&self, data: PyObject) -> PyResult<()> {
         let mut node = self.0.lock().unwrap();
-        node.data = data.clone();
+        DATA_MAP.insert(node.id.clone(), data);
         Ok(())
     }
 

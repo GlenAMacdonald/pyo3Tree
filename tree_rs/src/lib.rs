@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex, Weak as AWeak};
 use uuid::Uuid;
-use pyo3::{PyObject, Python, ToPyObject};
 
 pub struct Tree {
     pub root: Arc<Mutex<Node>>,
@@ -11,7 +10,7 @@ impl Tree {
     pub fn new(root: Option<Arc<Mutex<Node>>>) -> Arc<Mutex<Self>> {
         match root {
             Some(node) => Arc::new(Mutex::new(Self {root: node})),
-            None => Arc::new(Mutex::new(Self {root: Node::new(py_none(), None)}))
+            None => Arc::new(Mutex::new(Self {root: Node::new(None)}))
         }
     }
 
@@ -90,27 +89,19 @@ fn get_ancestors_recursive(node: &Arc<Mutex<Node>>, collection: &mut Vec<Arc<Mut
 
 pub struct Node {
     pub id: String,
-    pub data: PyObject,
     pub children: Arc<Mutex<Vec<Arc<Mutex<Node>>>>>,
     // Option only to cater for 'root'
     pub parent: Option<AWeak<Mutex<Node>>>,
 }
 
 impl Node {
-    pub fn new(data: PyObject, parent: Option<AWeak<Mutex<Node>>>) -> Arc<Mutex<Self>> {
+    pub fn new(parent: Option<AWeak<Mutex<Node>>>) -> Arc<Mutex<Self>> {
         Arc::new(Mutex::new(Self {
             id: Uuid::new_v4().to_string(),
-            data,
             children: Arc::new(Mutex::new(Vec::new())),
             parent,
         }))
     }
-}
-
-pub fn py_none() -> PyObject {
-    Python::with_gil(|py| {
-        py.None().to_object(py)
-    })
 }
 
 #[cfg(test)]
@@ -121,7 +112,7 @@ mod tests {
     #[test]
     fn test_add_node_to_empty_tree_mt(){
         let tree = Tree::new(None);
-        let child_node = Node::new(py_none(), None);
+        let child_node = Node::new(None);
 
         tree.lock().unwrap().add_child(child_node.clone(), None);
         
@@ -137,8 +128,8 @@ mod tests {
     #[test]
     fn test_add_node_two_deep_mt(){
         let tree = Tree::new(None);
-        let child_node = Node::new(py_none(), None);
-        let childs_child_node = Node::new(py_none(), None);
+        let child_node = Node::new(None);
+        let childs_child_node = Node::new(None);
 
         tree.lock().unwrap().add_child(child_node.clone(), None);
         tree.lock().unwrap().add_child(childs_child_node.clone(), Some(child_node.clone()));
@@ -155,8 +146,8 @@ mod tests {
     #[test]
     fn test_find_by_id_mt(){
         let tree = Tree::new(None);
-        let child_node = Node::new(py_none(), None);
-        let childs_child_node = Node::new(py_none(), None);
+        let child_node = Node::new(None);
+        let childs_child_node = Node::new(None);
 
         {
             tree.lock().unwrap().add_child(child_node.clone(), None);
@@ -171,8 +162,8 @@ mod tests {
     #[test]
     fn test_get_ancestors_on_two_deep_tree_mt(){
         let tree = Tree::new(None);
-        let child_node = Node::new(py_none(), None);
-        let childs_child_node = Node::new(py_none(), None);
+        let child_node = Node::new(None);
+        let childs_child_node = Node::new(None);
 
         tree.lock().unwrap().add_child(child_node.clone(), None);
         tree.lock().unwrap().add_child(childs_child_node.clone(), Some(child_node.clone()));
@@ -186,8 +177,8 @@ mod tests {
     #[test]
     fn test_move_node_from_two_deep_to_one_deep_mt(){
         let tree = Tree::new(None);
-        let child_node = Node::new(py_none(), None);
-        let childs_child_node = Node::new(py_none(), None);
+        let child_node = Node::new(None);
+        let childs_child_node = Node::new(None);
 
         {
             let tree_guard = tree.lock().unwrap();
