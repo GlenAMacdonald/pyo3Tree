@@ -1,10 +1,20 @@
-use std::collections::VecDeque;
-use std::sync::{Arc, Mutex, Weak as AWeak};
+use std::collections::{HashMap, VecDeque};
+use std::sync::{Arc, Mutex, RwLock, Weak as AWeak};
 use uuid::Uuid;
 
 pub struct Tree {
     pub root: Arc<Mutex<Node>>,
 }
+
+pub struct Tree_map {
+    pub nodes: Arc<RwLock<HashMap<String,Arc<RwLock<Node>>>>>,
+}
+
+// TODO
+// impl Tree_map {
+//     pub fn new(root: Option<Node>) ->
+// }
+
 
 impl Tree {
     pub fn new(root: Option<Arc<Mutex<Node>>>) -> Arc<Mutex<Self>> {
@@ -94,12 +104,28 @@ pub struct Node {
     pub parent: Option<AWeak<Mutex<Node>>>,
 }
 
+pub struct Node_map {
+    pub id: String,
+    pub children: Vec<String>,
+    pub parent: Option<String>,
+}
+
 impl Node {
     pub fn new(parent: Option<AWeak<Mutex<Node>>>) -> Arc<Mutex<Self>> {
         Arc::new(Mutex::new(Self {
             id: Uuid::new_v4().to_string(),
             children: Arc::new(Mutex::new(Vec::new())),
             parent,
+        }))
+    }
+}
+
+impl Node_map {
+    pub fn new(parent: Option<String>) -> Arc<RwLock<Self>> {
+        Arc::new(RwLock::new( Self {
+            id: Uuid::new_v4().to_string(),
+            children: Vec::with_capacity(2),
+            parent
         }))
     }
 }

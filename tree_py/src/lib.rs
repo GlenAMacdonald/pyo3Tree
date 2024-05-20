@@ -8,6 +8,7 @@ use lazy_static::lazy_static;
 
 lazy_static! {
     static ref DATA_MAP: DashMap<String, PyObject> = DashMap::new();
+    // TODO create a node cache for node_wrapper generation and pass Python only a weak reference, take ownership from this cache when added to the tree.
 }
 
 #[pyclass]
@@ -137,6 +138,11 @@ fn set_py_dict_recursively(py: Python, node: Arc<Mutex<Node_rs>>) -> PyObject {
 #[pyo3(name = "Node")]
 #[derive(Clone)]
 struct NodeWrapper(Arc<Mutex<Node_rs>>);
+
+//TODO
+//impl Drop for NodeWrapper {
+// remove data entry from DATA_MAP
+// }
 
 #[pymethods]
 impl NodeWrapper {
