@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   linux:
-    # if: "startsWith(github.ref, 'refs/tags/v')"
+    if: "startsWith(github.ref, 'refs/tags/v')"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -87,7 +87,7 @@ jobs:
           path: tree_py\dist\*.whl
 
   macos:
-        # if: "startsWith(github.ref, 'refs/tags/v')"
+    if: "startsWith(github.ref, 'refs/tags/v')"
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
