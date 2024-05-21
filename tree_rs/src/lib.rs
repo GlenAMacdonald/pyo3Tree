@@ -6,14 +6,24 @@ pub struct Tree {
     pub root: Arc<Mutex<Node>>,
 }
 
-pub struct Tree_map {
-    pub nodes: Arc<RwLock<HashMap<String,Arc<RwLock<Node>>>>>,
+pub struct TreeMap {
+    pub nodes: Arc<RwLock<HashMap<String,Arc<RwLock<NodeMap>>>>>,
 }
 
-// TODO
-// impl Tree_map {
-//     pub fn new(root: Option<Node>) ->
-// }
+impl TreeMap {
+    pub fn new(root: Option<NodeMap>) -> Arc<RwLock<Self>> {
+        let nodes = Arc::new(RwLock::new(HashMap::new()));
+        match root {
+            Some(node) => nodes.write().unwrap().insert(node.id.clone(), Arc::new(RwLock::new(node))),
+            None => {
+                let node = NodeMap::new(None);
+                let node_id = node.read().unwrap().id.clone();
+                nodes.write().unwrap().insert(node_id, node.clone())
+            }
+        };
+        Arc::new(RwLock::new(Self {nodes}))
+    }
+}
 
 
 impl Tree {
@@ -104,12 +114,6 @@ pub struct Node {
     pub parent: Option<AWeak<Mutex<Node>>>,
 }
 
-pub struct Node_map {
-    pub id: String,
-    pub children: Vec<String>,
-    pub parent: Option<String>,
-}
-
 impl Node {
     pub fn new(parent: Option<AWeak<Mutex<Node>>>) -> Arc<Mutex<Self>> {
         Arc::new(Mutex::new(Self {
@@ -120,11 +124,17 @@ impl Node {
     }
 }
 
-impl Node_map {
+pub struct NodeMap {
+    pub id: String,
+    pub children: Vec<String>,
+    pub parent: Option<String>,
+}
+
+impl NodeMap {
     pub fn new(parent: Option<String>) -> Arc<RwLock<Self>> {
         Arc::new(RwLock::new( Self {
             id: Uuid::new_v4().to_string(),
-            children: Vec::with_capacity(2),
+            children: Vec::with_capacity(5),
             parent
         }))
     }
