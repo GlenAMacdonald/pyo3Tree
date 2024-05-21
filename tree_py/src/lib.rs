@@ -139,7 +139,6 @@ fn set_py_dict_recursively(py: Python, node: Arc<Mutex<Node_rs>>) -> PyObject {
 #[derive(Clone)]
 struct NodeWrapper(Arc<Mutex<Node_rs>>);
 
-//TODO
 impl Drop for NodeWrapper {
     fn drop(&mut self){
         DATA_MAP.remove(&self.get_id().unwrap());
