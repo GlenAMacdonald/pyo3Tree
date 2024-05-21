@@ -21,7 +21,7 @@ impl TreeWrapper {
     #[new]
     fn new(root: Option<NodeWrapper>) -> Self {
         match root {
-            Some(wrapped_node) => TreeWrapper(Tree_rs::new(Some(wrapped_node.0))),
+            Some(wrapped_node) => TreeWrapper(Tree_rs::new(Some(wrapped_node.0.clone()))),
             None => TreeWrapper(Tree_rs::new(None))
         }
     }
@@ -34,8 +34,8 @@ impl TreeWrapper {
 
     pub fn add_child(&self, child: NodeWrapper, parent: Option<NodeWrapper>) -> PyResult<()> {
         match parent {
-            Some(parent_node) => {self.0.lock().unwrap().add_child(child.0, Some(parent_node.0))},
-            None => {self.0.lock().unwrap().add_child(child.0, None)}
+            Some(parent_node) => {self.0.lock().unwrap().add_child(child.0.clone(), Some(parent_node.0.clone()))},
+            None => {self.0.lock().unwrap().add_child(child.0.clone(), None)}
         }
         Ok(())
     }
@@ -140,9 +140,11 @@ fn set_py_dict_recursively(py: Python, node: Arc<Mutex<Node_rs>>) -> PyObject {
 struct NodeWrapper(Arc<Mutex<Node_rs>>);
 
 //TODO
-//impl Drop for NodeWrapper {
-// remove data entry from DATA_MAP
-// }
+impl Drop for NodeWrapper {
+    fn drop(&mut self){
+        DATA_MAP.remove(&self.get_id().unwrap());
+    }
+}
 
 #[pymethods]
 impl NodeWrapper {
