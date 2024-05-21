@@ -11,17 +11,30 @@ pub struct TreeMap {
 }
 
 impl TreeMap {
-    pub fn new(root: Option<NodeMap>) -> Arc<RwLock<Self>> {
-        let nodes = Arc::new(RwLock::new(HashMap::new()));
+    pub fn new(root: Option<Arc<RwLock<NodeMap>>>) -> Arc<RwLock<Self>> {
+        let nodes = Arc::new(RwLock::new(HashMap::with_capacity(100)));
         match root {
-            Some(node) => nodes.write().unwrap().insert(node.id.clone(), Arc::new(RwLock::new(node))),
+            Some(node) => {
+                let node_id = node.read().unwrap().id.clone();
+                nodes.write().unwrap().insert(node_id, node.clone());
+                nodes.write().unwrap().insert("root".to_string(),node)
+            },
             None => {
                 let node = NodeMap::new(None);
                 let node_id = node.read().unwrap().id.clone();
-                nodes.write().unwrap().insert(node_id, node.clone())
+                nodes.write().unwrap().insert(node_id, node.clone());
+                nodes.write().unwrap().insert("root".to_string(),node)
             }
         };
         Arc::new(RwLock::new(Self {nodes}))
+    }
+
+    pub fn add_child(&self, child: Arc<RwLock<NodeMap>>, parent: Option<Arc<RwLock<NodeMap>>>) {
+        let parent_id: String = match parent {
+            Some(node) => node.read().unwrap().id.clone(),
+            None => "root".to_string()
+        };
+        
     }
 }
 
