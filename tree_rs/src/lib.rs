@@ -1,6 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, RwLock, Weak as AWeak};
 use uuid::Uuid;
+use anyhow::{Result, anyhow};
 
 pub struct Tree {
     pub root: Arc<Mutex<Node>>,
@@ -29,15 +30,60 @@ impl TreeMap {
         Arc::new(RwLock::new(Self {nodes}))
     }
 
-    pub fn add_child(&self, child: Arc<RwLock<NodeMap>>, parent: Option<Arc<RwLock<NodeMap>>>) {
+    pub fn add_child(&self, child: &Arc<RwLock<NodeMap>>, parent: Option<&Arc<RwLock<NodeMap>>>) -> Result<()> {
+        self.nodes.write().unwrap().insert(child.read().unwrap().id.clone(), child.clone());
+        // TODO decide how to handle a parent not being on the tree
+        self.nodes.write().unwrap().insert(parent.unwrap().as_ref().read().unwrap().id.clone(), parent.unwrap().clone());
         let parent_id: String = match parent {
             Some(node) => node.read().unwrap().id.clone(),
             None => "root".to_string()
         };
-        
+
+        if let Some(parents_node) = self.nodes.read().unwrap().get(&parent_id) {
+            parents_node.write().unwrap().children.push(child.read().unwrap().id.clone())
+        }
+
+        Ok(())
+    }
+
+    pub fn find_by_id(&self, id: &str) -> Result<Arc<RwLock<NodeMap>>> {
+        Ok(self.nodes.read().unwrap().get(id).unwrap().clone())
+    }
+
+    pub fn get_ancestors(&self, node: &Arc<RwLock<NodeMap>>) -> Result<Vec<Arc<RwLock<NodeMap>>>> {
+        let mut collection: Vec<Arc<RwLock<NodeMap>>> = Vec::with_capacity(50);
+        get_nodemap_ancestors_recursive(self, &node, &mut collection);
+        collection.shrink_to_fit();
+        Ok(collection)
+    }
+
+    pub fn move_node(&self, tgt_node: &Arc<RwLock<NodeMap>>, new_parent: &Arc<RwLock<NodeMap>>) -> Result<()> {
+        // If child is an ancestor of new_parent Error out
+        if self.get_ancestors(new_parent).unwrap().iter().any(|node| Arc::ptr_eq(node, &tgt_node)) {
+            Err(anyhow!("Input node is ancestor of parent, cannot move."))?
+        }
+        // else move child into new parent
+        new_parent.write().unwrap().children.push(tgt_node.read().unwrap().id.clone());
+
+        // and remove child from old parent
+        {
+            let old_parents_id = tgt_node.read().unwrap().parent.as_ref().unwrap().clone();
+            let old_parent = self.nodes.read().unwrap().get(&old_parents_id).unwrap();
+        }
+
+        // update parent reference in tgt_node
+        tgt_node.write().unwrap().parent = Some(new_parent.read().unwrap().id.clone());
+        Ok(())
     }
 }
 
+pub fn get_nodemap_ancestors_recursive(tree: &TreeMap, node: &Arc<RwLock<NodeMap>>, collection: &mut Vec<Arc<RwLock<NodeMap>>>) {
+    if let Some(parent) = node.read().unwrap().parent.clone() {
+        let parent_node = tree.nodes.read().unwrap().get(&parent).unwrap().clone();
+        collection.push(parent_node.clone());
+        get_nodemap_ancestors_recursive(tree, &parent_node, collection);
+    }
+}
 
 impl Tree {
     pub fn new(root: Option<Arc<Mutex<Node>>>) -> Arc<Mutex<Self>> {
