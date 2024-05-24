@@ -57,22 +57,35 @@ impl TreeMap {
         Ok(collection)
     }
 
+// TODO - need this for when we start dropping NodeMaps
+    // pub fn remove_from_parent(&self, node: &Arc<RwLock<NodeMap>>) {
+    // }
+
     pub fn move_node(&self, tgt_node: &Arc<RwLock<NodeMap>>, new_parent: &Arc<RwLock<NodeMap>>) -> Result<()> {
         // If child is an ancestor of new_parent Error out
         if self.get_ancestors(new_parent).unwrap().iter().any(|node| Arc::ptr_eq(node, &tgt_node)) {
             Err(anyhow!("Input node is ancestor of parent, cannot move."))?
         }
-        // else move child into new parent
-        new_parent.write().unwrap().children.push(tgt_node.read().unwrap().id.clone());
-
-        // and remove child from old parent
-        {
-            let old_parents_id = tgt_node.read().unwrap().parent.as_ref().unwrap().clone();
-            let old_parent = self.nodes.read().unwrap().get(&old_parents_id).unwrap();
+        
+        // obtain tgt_node write lock to pull out data and set new parent
+        let mut tgt_node_guard = tgt_node.write().unwrap();
+        let tgt_node_id = tgt_node_guard.id.clone();
+        
+        {  
+            // obtain old_parent_write_guard, find the tgt_node id and remove it.
+            let old_parent = self.nodes.read().unwrap().get(tgt_node_guard.parent.as_ref().unwrap()).unwrap().clone();
+            let mut old_parent_write_guard = old_parent.write().unwrap();
+            if let Some(index) = old_parent_write_guard.children.iter().position(|x| x == &tgt_node_id){
+                old_parent_write_guard.children.remove(index);
+            }
         }
 
-        // update parent reference in tgt_node
-        tgt_node.write().unwrap().parent = Some(new_parent.read().unwrap().id.clone());
+        let mut new_parent_guard = new_parent.write().unwrap();
+        new_parent_guard.children.push(tgt_node_id);
+        tgt_node_guard.parent = Some(new_parent_guard.id.clone());
+        drop(new_parent_guard);
+        drop(tgt_node_guard);    
+
         Ok(())
     }
 }
