@@ -17,31 +17,40 @@ impl TreeMap {
         match root {
             Some(node) => {
                 let node_id = node.read().unwrap().id.clone();
-                nodes.write().unwrap().insert(node_id, node.clone());
-                nodes.write().unwrap().insert("root".to_string(),node)
+                let mut nodes_guard = nodes.write().unwrap();
+                nodes_guard.insert(node_id, node.clone());
+                nodes_guard.insert("root".to_string(),node)
             },
             None => {
                 let node = NodeMap::new(None);
                 let node_id = node.read().unwrap().id.clone();
-                nodes.write().unwrap().insert(node_id, node.clone());
-                nodes.write().unwrap().insert("root".to_string(),node)
+                let mut nodes_guard = nodes.write().unwrap();
+                nodes_guard.insert(node_id, node.clone());
+                nodes_guard.insert("root".to_string(),node)
             }
         };
         Self {nodes}
     }
 
     pub fn add_child(&self, child: &Arc<RwLock<NodeMap>>, parent: Option<&Arc<RwLock<NodeMap>>>) -> Result<()> {
-        self.nodes.write().unwrap().insert(child.read().unwrap().id.clone(), child.clone());
+        let mut nodes_guard = self.nodes.write().unwrap();
+        nodes_guard.insert(child.read().unwrap().id.clone(), child.clone());
         // TODO decide how to handle a parent not being on the tree
-        self.nodes.write().unwrap().insert(parent.unwrap().as_ref().read().unwrap().id.clone(), parent.unwrap().clone());
-        let parent_id: String = match parent {
-            Some(node) => node.read().unwrap().id.clone(),
-            None => "root".to_string()
-        };
+        // nodes_guard.insert(parent.unwrap().as_ref().read().unwrap().id.clone(), parent.unwrap().clone());
 
-        if let Some(parents_node) = self.nodes.read().unwrap().get(&parent_id) {
-            parents_node.write().unwrap().children.push(child.read().unwrap().id.clone())
-        }
+        // Checks for parent inside option, if no parent, make parent 'root node'
+        let (parent_id, mut parent_guard) = match parent {
+            Some(node) => {
+                let parent_guard = node.write().unwrap();
+                (parent_guard.id.clone(), parent_guard)
+            }
+            None => {
+                ("root".to_string(), nodes_guard.get("root").unwrap().write().unwrap())
+            }
+        };
+        let mut child_guard = child.write().unwrap();
+        parent_guard.children.push(child_guard.id.clone());
+        child_guard.parent = Some(parent_id);
 
         Ok(())
     }
