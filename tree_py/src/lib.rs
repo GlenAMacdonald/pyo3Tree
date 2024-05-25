@@ -31,7 +31,7 @@ impl TreeWrapper {
         Ok(NodeWrapper(root))
     }
 
-    pub fn add_child(&self, child: NodeWrapper, parent: Option<NodeWrapper>) -> PyResult<()> {
+    pub fn add(&self, child: NodeWrapper, parent: Option<NodeWrapper>) -> PyResult<()> {
         match parent {
             Some(parent_node) => {self.0.lock().unwrap().add_child(child.0, Some(parent_node.0))},
             None => {self.0.lock().unwrap().add_child(child.0, None)}
@@ -90,7 +90,7 @@ fn load_py_tree(py:Python<'_>, obj: &Bound<PyDict>) -> PyResult<Arc<Mutex<Node_r
 
     match obj.get_item("data") {
         Ok(Some(value)) => (DATA_MAP.insert(id.clone(),value.to_object(py))),
-        Ok(None) => (DATA_MAP.insert(id.clone(),py.None())),
+        Ok(None) => None,
         Err(err) => None,
     };
 
