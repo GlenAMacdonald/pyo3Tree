@@ -76,7 +76,7 @@ def test_node_movement():
     tgt_node = tree.find_by_id("9b73a757-da9c-46c0-8ee2-52bd1160ef96")
     new_parent = tree.find_by_id("dbe14fc0-aeef-4745-a4b0-41c98cbbaea8")
 
-    tree.move(tgt_node, new_parent)
+    tree.move_node(tgt_node, new_parent)
 
     assert tgt_node.parent.id == "dbe14fc0-aeef-4745-a4b0-41c98cbbaea8"
     assert len(tree.find_by_id("d7582511-8d32-47d9-a38a-becceb9b88e7").children) == 1
