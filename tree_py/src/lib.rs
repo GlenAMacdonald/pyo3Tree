@@ -1,4 +1,6 @@
+use std::result;
 use std::sync::{Arc, Mutex, RwLock};
+use pyo3::exceptions::PyRuntimeError;
 use pyo3::{prelude::*, PyObject, Python, ToPyObject};
 use pyo3::types::{PyDict, PyList};
 use tree_rs::{Node as Node_rs, Tree as Tree_rs, NodeMap as NodeMap_rs, TreeMap as TreeMap_rs};
@@ -21,6 +23,18 @@ impl TreeMapWrapper {
     #[new]
     fn new() -> Self {
         TreeMapWrapper(TREE_MAP.clone())
+    }
+
+    fn add_child(&self, child: NodeMapWrapper, parent_node: Option<NodeMapWrapper>) -> PyResult<()>{
+        let result = match parent_node {
+            Some(parent) => {self.0.write().unwrap().add_child(&child.0, Some(&parent.0))},
+            None => {self.0.write().unwrap().add_child(&child.0, None)}
+        };
+
+        match result {
+            Ok(()) => Ok(()),
+            Err(e) => Err(pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to add child: {}",e)))
+        }
     }
 }
 
@@ -152,11 +166,11 @@ fn set_py_dict_recursively(py: Python, node: Arc<Mutex<Node_rs>>) -> PyObject {
 #[derive(Clone)]
 struct NodeMapWrapper(Arc<RwLock<NodeMap_rs>>);
 
-impl Drop for NodeMapWrapper {
-    fn drop(&mut self){
-        DATA_MAP.remove(&self.0.read().unwrap().id);
-    }
-}
+// impl Drop for NodeMapWrapper {
+//     fn drop(&mut self){
+//         DATA_MAP.remove(&self.0.read().unwrap().id);
+//     }
+// }
 
 #[pymethods]
 impl NodeMapWrapper {
@@ -269,5 +283,7 @@ impl NodeWrapper {
 fn pyo3Tree(_: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NodeWrapper>()?;
     m.add_class::<TreeWrapper>()?;
+    m.add_class::<NodeMapWrapper>()?;
+    m.add_class::<TreeMapWrapper>()?;
     Ok(())
 }
