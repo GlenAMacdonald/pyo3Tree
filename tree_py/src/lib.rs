@@ -1,7 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use pyo3::{prelude::*, PyObject, Python, ToPyObject};
 use pyo3::types::{PyDict, PyList};
-use tree_rs::{Node as Node_rs, Tree as Tree_rs};
+use tree_rs::{Node as Node_rs, Tree as Tree_rs, NodeMap as NodeMap_rs, TreeMap as TreeMap_rs};
 
 use dashmap::DashMap;
 use lazy_static::lazy_static;
@@ -9,6 +9,19 @@ use lazy_static::lazy_static;
 lazy_static! {
     static ref DATA_MAP: DashMap<String, PyObject> = DashMap::new();
     // TODO create a node cache for node_wrapper generation and pass Python only a weak reference, take ownership from this cache when added to the tree.
+    static ref TREE_MAP: Arc<RwLock<TreeMap_rs>> = Arc::new(RwLock::new(TreeMap_rs::new(None)));
+}
+
+#[pyclass]
+#[pyo3(name = "TreeMap")]
+struct TreeMapWrapper(Arc<RwLock<TreeMap_rs>>);
+
+#[pymethods]
+impl TreeMapWrapper {
+    #[new]
+    fn new() -> Self {
+        TreeMapWrapper(TREE_MAP.clone())
+    }
 }
 
 #[pyclass]
@@ -135,6 +148,65 @@ fn set_py_dict_recursively(py: Python, node: Arc<Mutex<Node_rs>>) -> PyObject {
 }
 
 #[pyclass]
+#[pyo3(name = "NodeMap")]
+#[derive(Clone)]
+struct NodeMapWrapper(Arc<RwLock<NodeMap_rs>>);
+
+impl Drop for NodeMapWrapper {
+    fn drop(&mut self){
+        DATA_MAP.remove(&self.0.read().unwrap().id);
+    }
+}
+
+#[pymethods]
+impl NodeMapWrapper {
+    #[new]
+    fn new(data: PyObject) -> Self {
+        let node = NodeMap_rs::new(None);
+        DATA_MAP.insert(node.read().unwrap().id.clone(), data);
+        NodeMapWrapper(node)
+    }
+
+    #[getter]
+    fn get_id(&self) -> PyResult<String>{
+        Ok(self.0.read().unwrap().id.clone())
+    }
+
+    #[getter]
+    fn get_data(&self) -> PyResult<PyObject>{
+        Ok(DATA_MAP.get(&self.0.read().unwrap().id).unwrap().clone())
+    }
+
+    #[setter]
+    fn set_data(&self, data: PyObject) -> PyResult<()> {
+        DATA_MAP.insert(self.0.read().unwrap().id.clone(), data);
+        Ok(())
+    }
+
+    #[getter]
+    fn get_children(&self) -> PyResult<Vec<NodeMapWrapper>> {
+        let mut children: Vec<NodeMapWrapper> = Vec::with_capacity(50);
+
+        let tree_map_node = TREE_MAP.read().unwrap();
+        let nodes_guard = tree_map_node.nodes.read().unwrap();
+
+        let node_guard = self.0.read().unwrap();
+        for child_id in &node_guard.children{
+            children.push(NodeMapWrapper(nodes_guard.get(child_id).unwrap().clone()));
+        };
+        children.shrink_to_fit();
+        Ok(children)
+    }
+
+    #[getter]
+    fn get_parent(&self) -> PyResult<NodeMapWrapper> {
+        let tree_map_node = TREE_MAP.read().unwrap();
+        let nodes_guard = tree_map_node.nodes.read().unwrap();
+        Ok(NodeMapWrapper(nodes_guard.get(self.0.read().unwrap().parent.as_ref().unwrap()).unwrap().clone()))
+    }
+}
+
+#[pyclass]
 #[pyo3(name = "Node")]
 #[derive(Clone)]
 struct NodeWrapper(Arc<Mutex<Node_rs>>);
@@ -168,7 +240,7 @@ impl NodeWrapper {
 
     #[setter]
     fn set_data(&self, data: PyObject) -> PyResult<()> {
-        let mut node = self.0.lock().unwrap();
+        let node = self.0.lock().unwrap();
         DATA_MAP.insert(node.id.clone(), data);
         Ok(())
     }
