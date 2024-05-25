@@ -141,9 +141,11 @@ struct NodeWrapper(Arc<Mutex<Node_rs>>);
 #[pymethods]
 impl NodeWrapper {
     #[new]
-    fn new (data: PyObject) -> Self {
+    fn new (data: Option<PyObject>) -> Self {
         let node = Node_rs::new(None);
-        DATA_MAP.insert(node.lock().unwrap().id.clone(), data);
+        if let Some(value) = data {
+            DATA_MAP.insert(node.lock().unwrap().id.clone(), value);
+        }
         NodeWrapper(node)
     }
 
