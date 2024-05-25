@@ -1,3 +1,4 @@
+use std::collections::{HashMap, VecDeque};
 use std::result;
 use std::sync::{Arc, Mutex, RwLock};
 use pyo3::exceptions::PyRuntimeError;
@@ -25,7 +26,12 @@ impl TreeMapWrapper {
         TreeMapWrapper(TREE_MAP.clone())
     }
 
-    fn add_child(&self, child: NodeMapWrapper, parent_node: Option<NodeMapWrapper>) -> PyResult<()>{
+    #[getter]
+    fn get_root(&self) -> PyResult<NodeMapWrapper> {
+        Ok(NodeMapWrapper(self.0.read().unwrap().nodes.read().unwrap().get("root").unwrap().clone()))
+    }
+
+    fn add(&self, child: NodeMapWrapper, parent_node: Option<NodeMapWrapper>) -> PyResult<()>{
         let result = match parent_node {
             Some(parent) => {self.0.write().unwrap().add_child(&child.0, Some(&parent.0))},
             None => {self.0.write().unwrap().add_child(&child.0, None)}
@@ -36,6 +42,122 @@ impl TreeMapWrapper {
             Err(e) => Err(pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to add child: {}",e)))
         }
     }
+
+    pub fn find_by_id(&self, id: String) -> PyResult<NodeMapWrapper> {
+        Ok(NodeMapWrapper(self.0.read().unwrap().find_by_id(&id).unwrap()))
+    }
+
+    pub fn move_node(&self, tgt_node: NodeMapWrapper, new_parent_node: NodeMapWrapper) -> PyResult<()> {
+        match self.0.write().unwrap().move_node(&tgt_node.0, &new_parent_node.0) {
+            Ok(()) => return Ok(()),
+            Err(e) => return Err(pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to move node: {}",e)))
+        };
+    }
+
+    pub fn get_ancestors(&self, node: NodeMapWrapper) -> PyResult<Vec<NodeMapWrapper>> {
+        if let Ok(ancestors) = self.0.read().unwrap().get_ancestors(&node.0){
+            let ancestors_nodemap: Vec<NodeMapWrapper> = ancestors
+                .into_iter()
+                .map(NodeMapWrapper)
+                .collect();
+
+            return Ok(ancestors_nodemap);
+        }
+        return Err(pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to get ancestors for node with id: {}", node.0.read().unwrap().id.clone())))
+    }
+
+    #[staticmethod]
+    pub fn load(py: Python, python_tree: &Bound<PyDict>) -> PyResult<Self> {
+        let mut nodes: HashMap<String,Arc<RwLock<NodeMap_rs>>> = HashMap::with_capacity(100);
+        let mut queue = VecDeque::new();
+        queue.push_back(python_tree);
+
+        while let Some(obj) = queue.pop_front() {
+            let id = match obj.get_item("id") {
+                Ok(Some(value)) => value.extract::<String>().map_err(|_| pyo3::exceptions::PyTypeError::new_err("Failed to extract 'id'")),
+                Ok(None) => Err(pyo3::exceptions::PyTypeError::new_err("'id' key not found")),
+                Err(err) => Err(err),
+            }?;
+
+            match obj.get_item("data") {
+                Ok(Some(value)) => (DATA_MAP.insert(id.clone(),value.to_object(py))),
+                Ok(None) => None,
+                Err(err) => None,
+            };
+
+            let children = match obj.get_item("children") {
+                Ok(Some(value)) => value.extract::<Vec<Bound<PyDict>>>(),
+                Ok(None) => Ok(Vec::new()),
+                Err(err) => Err(err),
+            }?;
+
+            if children.len() > 0 {
+                for item in children.iter() {
+                    queue.push_back(item);
+                }
+            };
+        };
+    }
+
+    pub fn export(&self, py: Python) -> PyResult<PyObject> {
+        Ok(set_py_dict_recursively(py, self.0.lock().unwrap().root.clone()))
+    }
+}
+
+
+
+fn load_py_tree_map(py:Python<'_>, obj: &Bound<PyDict>) -> PyResult<Arc<RwLock<NodeMap_rs>>> {
+
+    let id = match obj.get_item("id") {
+        Ok(Some(value)) => value.extract::<String>().map_err(|_| pyo3::exceptions::PyTypeError::new_err("Failed to extract 'id'")),
+        Ok(None) => Err(pyo3::exceptions::PyTypeError::new_err("'id' key not found")),
+        Err(err) => Err(err),
+    }?;
+
+    match obj.get_item("data") {
+        Ok(Some(value)) => (DATA_MAP.insert(id.clone(),value.to_object(py))),
+        Ok(None) => None,
+        Err(err) => None,
+    };
+
+    // parent is not expected or needed in the incoming PyObject, it is inferred from the structure
+
+    let children = match obj.get_item("children") {
+        Ok(Some(value)) => value.extract::<Vec<Bound<PyDict>>>(),
+        Ok(None) => Ok(Vec::new()),
+        Err(err) => Err(err),
+    }?;
+
+    let mut node_children: Vec<String> = vec![];
+    if children.len() > 0 {
+        for item in children.iter() {
+            node_children.push()
+            load_py_tree(py, item).unwrap()
+        }
+    }
+
+    Ok(Arc::new(RwLock::new(NodeMap_rs{id, children: node_children, parent: None})))
+}
+
+fn set_py_dict_recursively_map(py: Python, node: Arc<RwLock<NodeMap_rs>>) -> PyObject {
+    let node_lock = node.lock().unwrap();
+    let py_dict = PyDict::new_bound(py);
+
+    py_dict.set_item("id", node_lock.id.clone()).unwrap();
+
+    if let Some(data) = DATA_MAP.get(&node_lock.id) {
+        py_dict.set_item("data", data.clone()).unwrap();
+    }
+
+    let children_lock = node_lock.children.lock().unwrap();
+    if !children_lock.is_empty() {
+        let children_list = PyList::new_bound(py, children_lock.iter().map(|child| {
+            set_py_dict_recursively(py, child.clone())
+        }));
+        py_dict.set_item("children", children_list).unwrap();
+    }   
+
+    py_dict.to_object(py)
 }
 
 #[pyclass]
@@ -59,7 +181,7 @@ impl TreeWrapper {
         Ok(NodeWrapper(root))
     }
 
-    pub fn add_child(&self, child: NodeWrapper, parent: Option<NodeWrapper>) -> PyResult<()> {
+    pub fn add(&self, child: NodeWrapper, parent: Option<NodeWrapper>) -> PyResult<()> {
         match parent {
             Some(parent_node) => {self.0.lock().unwrap().add_child(child.0.clone(), Some(parent_node.0.clone()))},
             None => {self.0.lock().unwrap().add_child(child.0.clone(), None)}
@@ -118,7 +240,7 @@ fn load_py_tree(py:Python<'_>, obj: &Bound<PyDict>) -> PyResult<Arc<Mutex<Node_r
 
     match obj.get_item("data") {
         Ok(Some(value)) => (DATA_MAP.insert(id.clone(),value.to_object(py))),
-        Ok(None) => (DATA_MAP.insert(id.clone(),py.None())),
+        Ok(None) => None,
         Err(err) => None,
     };
 
@@ -175,9 +297,11 @@ struct NodeMapWrapper(Arc<RwLock<NodeMap_rs>>);
 #[pymethods]
 impl NodeMapWrapper {
     #[new]
-    fn new(data: PyObject) -> Self {
+    fn new(data: Option<PyObject>) -> Self {
         let node = NodeMap_rs::new(None);
-        DATA_MAP.insert(node.read().unwrap().id.clone(), data);
+        if let Some(value) = data {
+            DATA_MAP.insert(node.read().unwrap().id.clone(), value);
+        }
         NodeMapWrapper(node)
     }
 
@@ -192,8 +316,10 @@ impl NodeMapWrapper {
     }
 
     #[setter]
-    fn set_data(&self, data: PyObject) -> PyResult<()> {
-        DATA_MAP.insert(self.0.read().unwrap().id.clone(), data);
+    fn set_data(&self, data: Option<PyObject>) -> PyResult<()> {
+        if let Some(value) = data {
+            DATA_MAP.insert(self.0.read().unwrap().id.clone(), value);
+        }
         Ok(())
     }
 
@@ -225,18 +351,14 @@ impl NodeMapWrapper {
 #[derive(Clone)]
 struct NodeWrapper(Arc<Mutex<Node_rs>>);
 
-impl Drop for NodeWrapper {
-    fn drop(&mut self){
-        DATA_MAP.remove(&self.get_id().unwrap());
-    }
-}
-
 #[pymethods]
 impl NodeWrapper {
     #[new]
-    fn new (data: PyObject) -> Self {
+    fn new (data: Option<PyObject>) -> Self {
         let node = Node_rs::new(None);
-        DATA_MAP.insert(node.lock().unwrap().id.clone(), data);
+        if let Some(value) = data {
+            DATA_MAP.insert(node.lock().unwrap().id.clone(), value);
+        }
         NodeWrapper(node)
     }
 
@@ -249,7 +371,6 @@ impl NodeWrapper {
     fn get_data(&self, py: Python) -> PyResult<PyObject> {
         let node = self.0.lock().unwrap();
         Ok(DATA_MAP.get(&node.id).unwrap().clone())
-        // node.data.as_ref().expect("No value present").clone_ref(py))
     }
 
     #[setter]
