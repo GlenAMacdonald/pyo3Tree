@@ -12,7 +12,7 @@ pub struct TreeMap {
 }
 
 impl TreeMap {
-    pub fn new(root: Option<Arc<RwLock<NodeMap>>>) -> Arc<RwLock<Self>> {
+    pub fn new(root: Option<Arc<RwLock<NodeMap>>>) -> Self {
         let nodes = Arc::new(RwLock::new(HashMap::with_capacity(100)));
         match root {
             Some(node) => {
@@ -27,7 +27,7 @@ impl TreeMap {
                 nodes.write().unwrap().insert("root".to_string(),node)
             }
         };
-        Arc::new(RwLock::new(Self {nodes}))
+        Self {nodes}
     }
 
     pub fn add_child(&self, child: &Arc<RwLock<NodeMap>>, parent: Option<&Arc<RwLock<NodeMap>>>) -> Result<()> {
