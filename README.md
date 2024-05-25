@@ -29,8 +29,8 @@ tree = Tree()
 child = Node('child')
 grand_child = Node('grand child')
 
-tree.add_child(child)
-tree.add_child(grand_child,child)
+tree.add(child)
+tree.add(grand_child,child)
 ```
 
 ## Current functions:
