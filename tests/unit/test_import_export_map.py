@@ -1,5 +1,5 @@
-from pyo3Tree import Tree
-from pyo3Tree import Node
+from pyo3Tree import TreeMap as Tree
+from pyo3Tree import NodeMap as Node
 
 def test_tree_import():
 

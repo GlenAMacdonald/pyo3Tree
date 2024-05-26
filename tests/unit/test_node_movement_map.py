@@ -1,18 +1,6 @@
-from pyo3Tree import TreeMap, NodeMap
-from pyo3Tree import Tree, Node
+from pyo3Tree import TreeMap as Tree, NodeMap as Node
 
 def test_node_attach():
-
-    tree = Tree()
-    node = Node()
-
-    tree.add(node)
-
-    found = tree.find_by_id(node.id)
-    assert found is not None
-    assert found.parent.id
-
-def test_nodemap_attach():
 
     tree = Tree()
     node = Node()
@@ -26,17 +14,6 @@ def test_nodemap_attach():
 def test_node_attach_deeper():
 
     tree = Tree(root=Node())
-    node = Node()
-
-    tree.add(node)
-
-    found = tree.find_by_id(node.id)
-    assert found is not None
-    assert found.parent.id == tree.root.id
-
-def test_nodemap_attach_deeper():
-
-    tree = Tree(root=Node('a'))
     node = Node()
 
     tree.add(node)
@@ -106,12 +83,3 @@ def test_node_movement():
 
     new_data = tree.export()
     assert new_data == output_data
-
-def main():
-    test_node_attach()
-    test_node_attach_deeper()
-    test_node_attach_deeper_deeper()
-    test_node_movement()
-
-if __name__ == "__main__":
-    main()
