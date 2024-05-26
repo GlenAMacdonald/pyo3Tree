@@ -1,7 +1,5 @@
 use std::collections::{HashMap, VecDeque};
-use std::result;
 use std::sync::{Arc, Mutex, RwLock};
-use pyo3::exceptions::PyRuntimeError;
 use pyo3::{prelude::*, PyObject, Python, ToPyObject};
 use pyo3::types::{PyDict, PyList};
 use tree_rs::{Node as Node_rs, Tree as Tree_rs, NodeMap as NodeMap_rs, TreeMap as TreeMap_rs};
@@ -68,81 +66,68 @@ impl TreeMapWrapper {
 
     #[staticmethod]
     pub fn load(py: Python, python_tree: &Bound<PyDict>) -> PyResult<Self> {
-        let mut nodes: HashMap<String,Arc<RwLock<NodeMap_rs>>> = HashMap::with_capacity(100);
-        let mut queue = VecDeque::new();
-        queue.push_back(python_tree);
+        // Define queue as containing a node (defined as a PyDict) and its parent_id
+        let mut queue: VecDeque<(Bound<PyDict>,Arc<RwLock<NodeMap_rs>>)> = VecDeque::new();
+        // initial parent is 'root'
+        let id = extract_id_from_pyobject(python_tree);
+        import_node_data_from_pyobject(py, &id, python_tree);
+        let root: Arc<RwLock<NodeMap_rs>> = Arc::new(RwLock::new(NodeMap_rs {id, children: Vec::with_capacity(5), parent: None}));
+        
+        // Create the tree with this root node
+        let tree = TreeMap_rs::new(Some(root.clone()));
+        let children_dicts = extract_children_from_pyobject(python_tree.clone());
+            queue.extend(children_dicts.iter().map(|child| (child.clone(), root.clone())));
 
-        while let Some(obj) = queue.pop_front() {
-            let id = match obj.get_item("id") {
-                Ok(Some(value)) => value.extract::<String>().map_err(|_| pyo3::exceptions::PyTypeError::new_err("Failed to extract 'id'")),
-                Ok(None) => Err(pyo3::exceptions::PyTypeError::new_err("'id' key not found")),
-                Err(err) => Err(err),
-            }?;
+        while let Some((obj,parent)) = queue.pop_front() {
+            let id = extract_id_from_pyobject(&obj);
+            import_node_data_from_pyobject(py, &id, &obj);
+            let node: Arc<RwLock<NodeMap_rs>> = Arc::new(RwLock::new(NodeMap_rs {id, children: Vec::with_capacity(5), parent: None}));
+            tree.add_child(&node, Some(&parent)).unwrap();
 
-            match obj.get_item("data") {
-                Ok(Some(value)) => (DATA_MAP.insert(id.clone(),value.to_object(py))),
-                Ok(None) => None,
-                Err(err) => None,
-            };
+            let children_dicts = extract_children_from_pyobject(obj);
+            queue.extend(children_dicts.iter().map(|child| (child.clone(), node.clone())));
 
-            let children = match obj.get_item("children") {
-                Ok(Some(value)) => value.extract::<Vec<Bound<PyDict>>>(),
-                Ok(None) => Ok(Vec::new()),
-                Err(err) => Err(err),
-            }?;
-
-            if children.len() > 0 {
-                for item in children.iter() {
-                    queue.push_back(item);
-                }
-            };
         };
 
-        Ok()
+        TREE_MAP.write().unwrap().nodes = tree.nodes;
+        Ok(TreeMapWrapper(TREE_MAP.clone()))
     }
 
     pub fn export(&self, py: Python) -> PyResult<PyObject> {
-        Ok(set_py_dict_recursively(py, self.0.lock().unwrap().root.clone()))
+        Ok(set_py_dict_recursively_map(py, self.0.read().unwrap().nodes.read().unwrap().get("root").unwrap()))
     }
 }
 
-
-
-fn load_py_tree_map(py:Python<'_>, obj: &Bound<PyDict>) -> PyResult<Arc<RwLock<NodeMap_rs>>> {
-
-    let id = match obj.get_item("id") {
-        Ok(Some(value)) => value.extract::<String>().map_err(|_| pyo3::exceptions::PyTypeError::new_err("Failed to extract 'id'")),
-        Ok(None) => Err(pyo3::exceptions::PyTypeError::new_err("'id' key not found")),
-        Err(err) => Err(err),
-    }?;
-
+fn import_node_data_from_pyobject(py: Python, id: &String, obj: &Bound<PyDict>) {
     match obj.get_item("data") {
         Ok(Some(value)) => (DATA_MAP.insert(id.clone(),value.to_object(py))),
         Ok(None) => None,
         Err(err) => None,
     };
+}
 
-    // parent is not expected or needed in the incoming PyObject, it is inferred from the structure
+fn extract_id_from_pyobject(obj: &Bound<PyDict>) -> String {
+    let id = match obj.get_item("id") {
+        Ok(Some(value)) => value.extract::<String>().map_err(|_| pyo3::exceptions::PyTypeError::new_err("Failed to extract 'id'")),
+        Ok(None) => Err(pyo3::exceptions::PyTypeError::new_err("'id' key not found")),
+        Err(err) => Err(err),
+    };
 
+    return id.unwrap()
+}
+
+fn extract_children_from_pyobject(obj: Bound<PyDict>) -> Vec<Bound<PyDict>> {
     let children = match obj.get_item("children") {
         Ok(Some(value)) => value.extract::<Vec<Bound<PyDict>>>(),
         Ok(None) => Ok(Vec::new()),
         Err(err) => Err(err),
-    }?;
+    };
 
-    let mut node_children: Vec<String> = vec![];
-    if children.len() > 0 {
-        for item in children.iter() {
-            node_children.push()
-            load_py_tree(py, item).unwrap()
-        }
-    }
-
-    Ok(Arc::new(RwLock::new(NodeMap_rs{id, children: node_children, parent: None})))
+    return children.unwrap()
 }
 
-fn set_py_dict_recursively_map(py: Python, node: Arc<RwLock<NodeMap_rs>>) -> PyObject {
-    let node_lock = node.lock().unwrap();
+fn set_py_dict_recursively_map(py: Python, node: &Arc<RwLock<NodeMap_rs>>) -> PyObject {
+    let node_lock = node.read().unwrap();
     let py_dict = PyDict::new_bound(py);
 
     py_dict.set_item("id", node_lock.id.clone()).unwrap();
@@ -151,10 +136,9 @@ fn set_py_dict_recursively_map(py: Python, node: Arc<RwLock<NodeMap_rs>>) -> PyO
         py_dict.set_item("data", data.clone()).unwrap();
     }
 
-    let children_lock = node_lock.children.lock().unwrap();
-    if !children_lock.is_empty() {
-        let children_list = PyList::new_bound(py, children_lock.iter().map(|child| {
-            set_py_dict_recursively(py, child.clone())
+    if node_lock.children.len() > 0 {
+        let children_list = PyList::new_bound(py, node_lock.children.iter().map(|child| {
+            set_py_dict_recursively_map(py, TREE_MAP.read().unwrap().nodes.read().unwrap().get(child).unwrap())
         }));
         py_dict.set_item("children", children_list).unwrap();
     }   

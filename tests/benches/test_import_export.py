@@ -1,5 +1,6 @@
-from pyo3Tree import Tree, Node
-from pyo3Tree import TreeMap, NodeMap
+# from pyo3Tree import Tree, Node
+from pyo3Tree import TreeMap as Tree
+from pyo3Tree import NodeMap as Node
 
 def test_tree_import():
 
@@ -23,7 +24,6 @@ def test_tree_import():
 
 
 def test_tree_export():
-
     data = {
         "id": "343708ec-f679-4345-a7a9-1eb11f974c81",
         "children": [
