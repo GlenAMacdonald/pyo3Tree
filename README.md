@@ -2,6 +2,10 @@
 
 Rust based Tree datastructure wrapped by pyo3.
 
+There are two similar datastructures in the package:
+- Tree, Node: Which are recursive structures, where each Node holds the data
+- TreeMap, NodeMap: Which is based on one underlying hashmap holding the relationships and another the data.
+
 ## Usage
 
 You can either clone the repo and build:
@@ -21,6 +25,7 @@ pip install pyo3Tree
 
 Then to use:
 
+Recursive Structure
 ```
 from pyo3Tree import Tree
 from pyo3Tree import Node
@@ -29,8 +34,21 @@ tree = Tree()
 child = Node('child')
 grand_child = Node('grand child')
 
-tree.add_child(child)
-tree.add_child(grand_child,child)
+tree.add(child)
+tree.add(grand_child,child)
+```
+
+Hashmap Structure
+```
+from pyo3Tree import TreeMap as Tree
+from pyo3Tree import NodeMap as Node
+
+tree = Tree()
+child = Node('child')
+grand_child = Node('grand child')
+
+tree.add(child)
+tree.add(grand_child,child)
 ```
 
 ## Current functions:
@@ -55,6 +73,13 @@ tree.add_child(grand_child,child)
 - tree.get_ancestors(node) - returns a python owned vector of python owned references to the rust owned ancestors of the specified node.
 - tree.export() - returns a completely python owned dictionary representation of the Tree.
 
+### NodeMap
+-- TODO
+
+### TreeMap
+-- TODO
+
+
 ### NOTES: 
 - Constructing a tree creates a python object containing a reference to the rust object. The nodes can hold any Python object (which will be tracked by Pythons memory mananger). The rest of the tree should be managed by Rust, on a combination of the stack and the heap. If I understand it correctly, each node and tree instance will exist on the stack, whereas all the Vectors and reference counters will live on the heap.
 - the file tree_py.rs is a wrapper of tree_rs.rs and provides the interfaces to the rust objects and their attributes.
@@ -62,6 +87,12 @@ tree.add_child(grand_child,child)
 - The rust implementation uses 'Atomic Reference counters' to determine whether to drop objects, each python owned reference to a rust owned Node or Tree adds to the reference counter.
 - Each piece of data stored is fully owned by Python, the rust implementation stores a reference to the Python object, which I presumes adds to Pythons reference count for that object.
 
+### NOTES for TreeMap/NodeMap
+- The python owned references only contain strings of parent and children ids. Rust retreives the required information from the underlying hashmap structure, so python doesn't know the difference.
+- Rust stores the data in separate hashmap, so that there are no python references contained in the relationship hashmap. I was hoping this would simplify whatever goes on when nodes move as well as any potential reference tracking that happens in the recursive structure.
+
 This is roughly as fast as the python tree implementations, however 'find_node_by_id' is much faster ~10x. It seems like the initial object generation is roughly the same speed as the python implementations bigtree, anytree.
+
+
 
 No large tree testing has occurred. No performance or memory optimization has occurred.
