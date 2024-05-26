@@ -20,8 +20,16 @@ struct TreeMapWrapper(Arc<RwLock<TreeMap_rs>>);
 #[pymethods]
 impl TreeMapWrapper {
     #[new]
-    fn new() -> Self {
-        TreeMapWrapper(TREE_MAP.clone())
+    fn new(root: Option<NodeMapWrapper>) -> Self {
+        match root {
+            Some(wrapped_node) => {
+                let node = wrapped_node.0;
+                let new_tree = TreeMap_rs::new(Some(node));
+                TREE_MAP.write().unwrap().nodes = new_tree.nodes;
+                TreeMapWrapper(TREE_MAP.clone())
+            },
+            None => TreeMapWrapper(TREE_MAP.clone())
+        }
     }
 
     #[getter]
@@ -66,6 +74,8 @@ impl TreeMapWrapper {
 
     #[staticmethod]
     pub fn load(py: Python, python_tree: &Bound<PyDict>) -> PyResult<Self> {
+        // Clear data
+        DATA_MAP.clear();
         // Define queue as containing a node (defined as a PyDict) and its parent_id
         let mut queue: VecDeque<(Bound<PyDict>,Arc<RwLock<NodeMap_rs>>)> = VecDeque::new();
         // initial parent is 'root'

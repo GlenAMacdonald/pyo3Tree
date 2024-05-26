@@ -14,8 +14,8 @@ def test_node_attach():
 
 def test_nodemap_attach():
 
-    tree = TreeMap()
-    node = NodeMap('a')
+    tree = Tree()
+    node = Node()
 
     tree.add(node)
 
@@ -36,7 +36,7 @@ def test_node_attach_deeper():
 
 def test_nodemap_attach_deeper():
 
-    tree = TreeMap(root=NodeMap('a'))
+    tree = Tree(root=Node('a'))
     node = Node()
 
     tree.add(node)
