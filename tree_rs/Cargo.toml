@@ -25,6 +25,8 @@ pprof = { version = "0.13.0", features = ["criterion", "flamegraph"] }
 rand = "0.8.5"
 lazy_static = "1.4"
 dashmap = "4.0"
+anyhow = "1.0.82"
+pyo3 = { version = "0.21.1", features = ["abi3-py38","extension-module", "auto-initialize"] }
 
 [dependencies.uuid]
 version = "1.7.0"
