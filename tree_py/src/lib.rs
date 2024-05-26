@@ -234,11 +234,11 @@ fn load_py_tree(py:Python<'_>, obj: &Bound<PyDict>) -> PyResult<Arc<Mutex<Node_r
         Err(err) => Err(err),
     }?;
 
-    match obj.get_item("data") {
-        Ok(Some(value)) => (DATA_MAP.insert(id.clone(),value.to_object(py))),
-        Ok(None) => None,
-        Err(err) => None,
-    };
+    let data = match obj.get_item("data") {
+        Ok(Some(value)) => Ok(value.to_object(py)),
+        Ok(None) => Ok(py.None()),
+        Err(err) => Err(err),
+    }?;
 
     // parent is not expected or needed in the incoming PyObject, it is inferred from the structure
 
@@ -255,7 +255,7 @@ fn load_py_tree(py:Python<'_>, obj: &Bound<PyDict>) -> PyResult<Arc<Mutex<Node_r
         }
     }
 
-    Ok(Arc::new(Mutex::new(Node_rs{id, children: node_children, parent: None})))
+    Ok(Arc::new(Mutex::new(Node_rs{id, data, children: node_children, parent: None})))
 }
 
 fn set_py_dict_recursively(py: Python, node: Arc<Mutex<Node_rs>>) -> PyObject {
@@ -264,8 +264,8 @@ fn set_py_dict_recursively(py: Python, node: Arc<Mutex<Node_rs>>) -> PyObject {
 
     py_dict.set_item("id", node_lock.id.clone()).unwrap();
 
-    if let Some(data) = DATA_MAP.get(&node_lock.id) {
-        py_dict.set_item("data", data.clone()).unwrap();
+    if !node_lock.data.is_none(py) {
+        py_dict.set_item("data", node_lock.data.clone()).unwrap();
     }
 
     let children_lock = node_lock.children.lock().unwrap();
@@ -351,11 +351,10 @@ struct NodeWrapper(Arc<Mutex<Node_rs>>);
 impl NodeWrapper {
     #[new]
     fn new (data: Option<PyObject>) -> Self {
-        let node = Node_rs::new(None);
-        if let Some(value) = data {
-            DATA_MAP.insert(node.lock().unwrap().id.clone(), value);
+        match data {
+            Some(value) => NodeWrapper(Node_rs::new(value, None)),
+            None => NodeWrapper(Node_rs::new(py_none(),None))
         }
-        NodeWrapper(node)
     }
 
     #[getter]
@@ -394,6 +393,12 @@ impl NodeWrapper {
             Ok(None)
         }
     }
+}
+
+pub fn py_none() -> PyObject {
+    Python::with_gil(|py| {
+        py.None().to_object(py)
+    })
 }
 
 #[pymodule]
