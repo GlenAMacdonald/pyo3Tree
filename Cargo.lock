@@ -1282,6 +1282,7 @@ dependencies = [
  "dashmap 4.0.2",
  "lazy_static",
  "pprof",
+ "pyo3",
  "rand",
  "uuid",
 ]
