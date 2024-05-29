@@ -2,6 +2,7 @@
 members = [
     "tree_rs",
     "tree_py",
+    "treemap_rs"
 ]
 
 resolver = "2"
