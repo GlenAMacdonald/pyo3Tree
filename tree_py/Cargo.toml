@@ -17,6 +17,7 @@ crate-type = ["cdylib", "lib"]
 
 [dependencies]
 tree_rs = { path = "../tree_rs" }
+treemap_rs = { path = "../treemap_rs" }
 pyo3 = { version = "0.21.1", features = ["abi3-py38","extension-module", "auto-initialize"] }
 lazy_static = "1.4"
 dashmap = "4.0"
