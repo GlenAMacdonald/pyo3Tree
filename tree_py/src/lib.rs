@@ -2,7 +2,8 @@ use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, RwLock};
 use pyo3::{prelude::*, PyObject, Python, ToPyObject};
 use pyo3::types::{PyDict, PyList};
-use tree_rs::{Node as Node_rs, Tree as Tree_rs, NodeMap as NodeMap_rs, TreeMap as TreeMap_rs};
+use tree_rs::{Node as Node_rs, Tree as Tree_rs};
+use treemap_rs::{NodeMap as NodeMap_rs, TreeMap as TreeMap_rs};
 
 use dashmap::DashMap;
 use lazy_static::lazy_static;
