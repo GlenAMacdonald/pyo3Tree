@@ -909,6 +909,7 @@ dependencies = [
  "pyo3",
  "serial_test",
  "tree_rs",
+ "treemap_rs",
  "uuid",
 ]
 
@@ -1284,6 +1285,16 @@ dependencies = [
  "pprof",
  "pyo3",
  "rand",
+ "uuid",
+]
+
+[[package]]
+name = "treemap_rs"
+version = "0.1.2"
+dependencies = [
+ "anyhow",
+ "criterion",
+ "pprof",
  "uuid",
 ]
 
